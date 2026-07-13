@@ -1,2 +1,32 @@
-{{ printf "%+v" . }}
-<a href="/logout" class="btn btn-primary">Logout</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="kratos-body">
+
+    <section class="kratos-container">
+        <div class="kratos-card">
+            
+            <h1 class="dashboard-header">Welcome, {{ .name.first }}!</h1>
+
+            <div class="user-data">
+                <div><strong>First Name:</strong> {{ .name.first }}</div>
+                <div><strong>Last Name:</strong> {{ .name.last }}</div>
+                <div><strong>Email:</strong> {{ .email }}</div>
+            </div>
+
+            <div class="kratos-form-group">
+                <a href="/logout" style="text-decoration: none;">
+                    <button type="button">Logout</button>
+                </a>
+            </div>
+
+        </div>
+    </section>
+
+</body>
+</html>

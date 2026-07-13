@@ -36,23 +36,7 @@ func (a *App) Registration(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.Render(http.StatusOK, "kratos-post.html", flow.GetUi())
-}
-
-func (a *App) Verification(c echo.Context) error {
-	flowId := c.FormValue("flow")
-	req := a.ory.FrontendAPI.GetVerificationFlow(c.Request().Context())
-	req = req.Id(flowId)
-	req = req.Cookie(c.Request().Header.Get("Cookie"))
-	flow, _, err := req.Execute()
-	prettyPrint(flow)
-	if err != nil {
-		return c.Redirect(http.StatusInternalServerError, err.Error())
-	}
-	if flow.Ui.GetMethod() == http.MethodGet {
-		return c.Render(http.StatusOK, "kratos-get.html", flow.GetUi())
-	}
-	return c.Render(http.StatusOK, "kratos-post.html", flow.GetUi())
+	return c.Render(http.StatusOK, "kratos.html", flow.GetUi())
 }
 
 func (a *App) Login(c echo.Context) error {
@@ -65,7 +49,7 @@ func (a *App) Login(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.Render(http.StatusOK, "kratos-post.html", flow.GetUi())
+	return c.Render(http.StatusOK, "kratos.html", flow.GetUi())
 }
 
 func (a *App) Logout(c echo.Context) error {
@@ -79,6 +63,18 @@ func (a *App) Logout(c echo.Context) error {
 	return c.Redirect(http.StatusTemporaryRedirect, flow.LogoutUrl)
 }
 
+func (a *App) Recovery(c echo.Context) error {
+	flowId := c.FormValue("flow")
+	req := a.ory.FrontendAPI.GetRecoveryFlow(c.Request().Context())
+	req = req.Id(flowId)
+	req = req.Cookie(c.Request().Header.Get("Cookie"))
+	flow, _, err := req.Execute()
+	if err != nil {
+		return c.String(http.StatusInternalServerError, err.Error())
+	}
+	return c.Render(http.StatusOK, "kratos.html", flow.GetUi())
+}
+
 func (a *App) Settings(c echo.Context) error {
 	flowId := c.FormValue("flow")
 	req := a.ory.FrontendAPI.GetSettingsFlow(c.Request().Context())
@@ -89,11 +85,14 @@ func (a *App) Settings(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusInternalServerError, err.Error())
 	}
-	return c.Render(http.StatusOK, "kratos-post.html", flow.GetUi())
+	return c.Render(http.StatusOK, "kratos.html", flow.GetUi())
 }
 
 func (a *App) Dashboard(c echo.Context) error {
-	sess, _ := getSession(c.Request().Context())
+	sess, err := getSession(c.Request().Context())
+	if err != nil {
+		return c.String(http.StatusUnauthorized, "Unauthorized")
+	}
 	prettyPrint(sess)
 	return c.Render(http.StatusOK, "dashboard.html", sess.Identity.GetTraits())
 }
@@ -103,7 +102,7 @@ type TemplateRenderer struct {
 }
 
 // Render renders a template document
-func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
+func (t *TemplateRenderer) Render(w io.Writer, name string, data any, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
 }
 
@@ -113,7 +112,7 @@ func (app *App) sessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 
 		session, _, err := app.ory.FrontendAPI.ToSession(c.Request().Context()).Cookie(cookies).Execute()
 		if err != nil || !*session.Active {
-			return c.Redirect(http.StatusFound, "http://kratos:4433/self-service/login/browser")
+			return c.String(http.StatusUnauthorized, "Unauthorized")
 		}
 		ctx := context.WithValue(c.Request().Context(), "req.session", session)
 		c.SetRequest(c.Request().WithContext(ctx))
@@ -156,9 +155,9 @@ func main() {
 	})
 
 	e.GET("/registration", app.Registration)
-	e.GET("/verification", app.Verification)
 	e.GET("/login", app.Login)
 	e.GET("/logout", app.Logout)
+	e.GET("/recovery", app.Recovery)
 	e.GET("/settings", app.Settings)
 
 	e.GET("/dashboard", app.sessionMiddleware(app.Dashboard))
