@@ -1,0 +1,91 @@
+services:
+  traefik:
+    image: traefik:v3.6
+    container_name: traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--providers.file.directory=/etc/traefik/dynamic"
+    ports:
+      - "8081:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./traefik_dynamic:/etc/traefik/dynamic"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - intranet
+  webserver:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webserver
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.webserver.loadbalancer.server.port=8001"
+      - "traefik.http.routers.webserver.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.webserver.entrypoints=web"
+      - "traefik.http.routers.webserver.priority=10"
+    networks:
+      - intranet
+  kratos-migrate:
+    image: oryd/kratos:v1.3.1
+    container_name: kratos-migrate
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true&mode=rwc
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./
+        target: /etc/config/kratos
+    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
+    restart: on-failure
+    networks:
+      - intranet
+  kratos:
+    depends_on:
+      - kratos-migrate
+    image: oryd/kratos:v1.3.1
+    container_name: kratos
+    ports:
+      - '4433:4433' # public
+      - '4434:4434' # admin
+    restart: unless-stopped
+    environment:
+      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
+    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
+    volumes:
+      - type: volume
+        source: kratos-sqlite
+        target: /var/lib/sqlite
+        read_only: false
+      - type: bind
+        source: ./
+        target: /etc/config/kratos
+    networks:
+      - intranet
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.kratos.loadbalancer.server.port=4433"
+      - "traefik.http.middlewares.kratos-strip.stripprefix.prefixes=/kratos"
+      - "traefik.http.routers.kratos.entrypoints=web"
+      - "traefik.http.routers.kratos.rule=PathPrefix(`/kratos`)"
+      - "traefik.http.routers.kratos.middlewares=kratos-strip"
+  mailslurper:
+    image: oryd/mailslurper:latest-smtps
+    container_name: mailslurper
+    ports:
+      - '4436:4436'
+      - '4437:4437'
+    networks:
+      - intranet
+networks:
+  intranet:
+volumes:
+  kratos-sqlite:

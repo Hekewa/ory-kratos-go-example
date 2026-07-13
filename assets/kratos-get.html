@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<head>
+    <title>Kratos</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="kratos-body">
+    <section class="kratos-container">
+        {{ range .Messages }}
+            <h2>{{ .Text }}</h2>
+        {{ end }}
+        <a href="{{ .Action }}">Continue</a>
+    </section>
+</body>

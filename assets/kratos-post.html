@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<head>
+    <title>Kratos</title>
+    <link rel="stylesheet" href="/assets/style.css">
+</head>
+<body class="kratos-body">
+    <section class="kratos-container">
+        {{ range .Messages }}
+            <h2>{{ .Text }}</h2>
+        {{ end }}
+        <div class="kratos-card">
+        <form class="kratos-form" id="kratos-form" action="{{ .Action }}" method="{{ .Method }}">
+        {{ range .Nodes }}
+        {{ if and .Attributes .Attributes.UiNodeInputAttributes }}
+            {{ if ne .Attributes.UiNodeInputAttributes.Type "hidden" }}
+            <div class="kratos-form-group">
+                {{ if ne .Attributes.UiNodeInputAttributes.Type "submit"}}<label for="{{ .Attributes.UiNodeInputAttributes.Name }}">{{ .Meta.Label.Text }}</label>{{ end }}
+            {{ else }}
+            <div style="display: none;">
+            {{ end }}
+            {{ if eq .Attributes.UiNodeInputAttributes.Type "submit" "default"}}
+                <button
+                type="{{ .Attributes.UiNodeInputAttributes.Type }}"
+                name="{{ .Attributes.UiNodeInputAttributes.Name }}"
+                id="{{ .Attributes.UiNodeInputAttributes.Name }}"
+                value="{{ .Attributes.UiNodeInputAttributes.Value }}"
+                {{ if eq .Attributes.UiNodeInputAttributes.Value "previous" }}formnovalidate{{ end }}
+                >{{ .Meta.Label.Text }}</button>
+            {{ else }}
+                <input
+                type="{{ .Attributes.UiNodeInputAttributes.Type }}"
+                name="{{ .Attributes.UiNodeInputAttributes.Name }}"
+                id="{{ .Attributes.UiNodeInputAttributes.Name }}"
+                value="{{ .Attributes.UiNodeInputAttributes.Value }}"
+                {{ if .Attributes.UiNodeInputAttributes.Required }}required{{ end }}
+                >
+                <ul>
+                {{ range .Messages }}
+                <li class="kratos-node-error">{{ .Text }}</li>
+                {{ end }}
+                </ul>
+            {{ end }}
+            </div>
+        {{ end }}
+        {{ end }}
+        </form>
+        </div>
+    </section>
+</body>
