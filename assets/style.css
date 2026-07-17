@@ -72,8 +72,49 @@ body, html {
     text-decoration: underline;
 }
 
+/* 1. Make the link the positioning anchor for the tooltip */
+.btn-text {
+  position: relative;
+  display: inline-block; /* Ensures consistent layout & sizing */
+  text-decoration: none;
+}
+
+/* 2. Build the tooltip box using the ::after pseudo-element */
+.btn-text::after {
+  content: attr(data-tooltip); /* Pulls text dynamically from HTML */
+  position: absolute;
+  bottom: 130%; /* Positions the box directly above the link */
+  left: 50%;
+  transform: translateX(-50%); /* Centers the tooltip horizontally */
+  
+  /* Styling & Cosmetics */
+  background-color: #222222;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  white-space: nowrap; /* Keeps text on one line */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  /* Prevent interaction glitches */
+  pointer-events: none; 
+  
+  /* Setup smooth fade-in animation */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* 3. Reveal the tooltip on hover OR when a keyboard user tabs onto it (focus) */
+.btn-text:hover::after,
+.btn-text:focus::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-4px); /* Slight nudge upward on reveal */
+}
+
 /* ==========================================
-   Base Layout & Reset
+   Kratos Styles 
    ========================================== */
 .kratos-body {
     margin: 0;
