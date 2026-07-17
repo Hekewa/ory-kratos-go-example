@@ -1,4 +1,4 @@
-module github.com/Hekewa/kratos-go-example
+module github.com/Hekewa/ory-kratos-go-example
 
 go 1.26.1
 
