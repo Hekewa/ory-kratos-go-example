@@ -32,7 +32,7 @@ services:
     networks:
       - intranet
   kratos-migrate:
-    image: oryd/kratos:v1.3.1
+    image: oryd/kratos:v26.2.0
     container_name: kratos-migrate
     environment:
       - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true&mode=rwc
@@ -51,7 +51,7 @@ services:
   kratos:
     depends_on:
       - kratos-migrate
-    image: oryd/kratos:v1.3.1
+    image: oryd/kratos:v26.2.0
     container_name: kratos
     ports:
       - '4433:4433' # public
